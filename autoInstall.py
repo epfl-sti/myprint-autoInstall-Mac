@@ -140,6 +140,16 @@ def Store_Credentials():
     username = raw_input('Please type your username:')
     password = getpass.getpass('Please type your password:')
 
+    proc = Popen(['smbclient', '-W', 'intranet', '-U', username,
+                  '//print1/pool1', password],
+                 stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    for stdoutOrErr in proc.communicate():
+        maybeError = re.search("(NT_STATUS_\S*)", stdoutOrErr)
+        if maybeError:
+            print('Unable to validate credentials (%s)\n' % maybeError.group(1) +
+                  'Please, double-check username and password and try again.\n')
+            exit()
+
     # Delete the already existing entry into the Keychain
     deletionResult = LaunchProcess("security delete-internet-password -l POOL1")
     if deletionResult != '':
